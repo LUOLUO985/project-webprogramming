@@ -1,0 +1,22 @@
+/* I forgot the point ,the layout without it ,will be misplaced*/
+
+*{
+    box-sizing: border-box;
+}
+html, body{
+    height: 100%;
+    margin: 0;
+}
+body{
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+}
+
+#map{
+    flex: 1;
+}
