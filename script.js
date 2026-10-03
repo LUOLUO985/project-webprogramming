@@ -4,6 +4,9 @@ const GEOJSON_URL =
   "&request=GetFeature&typeName=tilastointialueet:kunta4500k" +
   "&outputFormat=json&srsName=EPSG:4326";
 
+
+const EMPLOYMENT_YEAR = 2024;
+
 document.addEventListener("DOMContentLoaded", init);
 //draw the map
 async function init() {
@@ -11,7 +14,12 @@ async function init() {
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap",
     }).addTo(map);
-    const geoJsonData = await fetch(GEOJSON_URL).then((res) => res.json());
+    const results = await Promise.all([
+        fetch(GEOJSON_URL).then((res) => res.json()),
+        loadEmploymentData(EMPLOYMENT_YEAR),
+    ]);
+    const geoJsonData = results[0];
+    const employment = results[1];
     const layer = L.geoJSON(geoJsonData, {
         style:{
             color: "#94a3b8",
@@ -25,4 +33,6 @@ async function init() {
         }
     }).addTo(map);
     map.fitBounds(layer.getBounds());
+
+    //put colors on the map
 }
