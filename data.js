@@ -55,9 +55,10 @@ function decodeJsonStat(data) {
     return {
         dimensions: dimensions,
         get: function (coord) {
-      if (offset < 0) return null;
-      const value = data.value[offset];
-      return value === undefined ? null : value;
+        const offset = offsetOf(coord);
+        if (offset < 0) return null;
+        const value = data.value[offset];
+        return value === undefined ? null : value;
         },
     };
 }
