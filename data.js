@@ -7,7 +7,13 @@ async function fetchPxwebData(tablePath, query) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(query),
+    //现在这个返回不出来，我直接强制转换成json-stat2格式
+    body: JSON.stringify({
+        query: query,
+        response: {
+            format: "json-stat2"
+        }
+    }),
   });
 
   //the security check for the response
@@ -29,31 +35,32 @@ function decodeJsonStat(data) {
         const categories = data.dimension[name].category;
         dimensions[name] = {
             index: categories.index,
-            label: categories.label,
+            labels: categories.label,
         };
     }
-    return dimensions;
-}
+    
+
 
 //给维度坐标加下标的，因为不能用一堆数组取值，所以要给下标，自己写有bug 给dimensions起下标
-function addIndexToDimensions(dimensions) {
-    let indexedDimensions = 0;
+    function offsetOf(coord) {
+    let offset = 0;
     for (let i = 0; i < ids.length; i++) {
-        const position = dimensions[ids[i]].index[dimensions[ids[i]]];
+        const position = dimensions[ids[i]].index[coord[ids[i]]];
         if (position === undefined) return -1;
         offset = offset*sizes[i] + position;
 
+        }
+        return offset;
     }
-    return offset;
-}
-return {
-    get: function (coord) {
-      const offset = offsetOf(coord);
+    return {
+        dimensions: dimensions,
+        get: function (coord) {
       if (offset < 0) return null;
       const value = data.value[offset];
       return value === undefined ? null : value;
         },
     };
+}
 //catch the emplpyment data
 //拉取数据 就业率 方便地图 ，去除掉KU 这个字符 不然 太混乱了 为了匹配多边形
 const EMPLOYMENT_TABLE_PATH = "tyokay/115x.px";
@@ -62,7 +69,7 @@ async function loadEmploymentData(year) {
         {
             code: "alue_23_20250101",
             selection: {
-                filter: "item",
+                filter: "all",
                 values: ["*"],
             },
         },
@@ -82,7 +89,7 @@ async function loadEmploymentData(year) {
         },
     ];
     const data = decodeJsonStat(await fetchPxwebData(EMPLOYMENT_TABLE_PATH, query));
-    const areaDim = data["alue_23_20250101"];
+    const areaDim = data.dimensions["alue_23_20250101"];
     const table = {};
     //next step ,collext data
     //遍历每个市镇的代码，跳过全国、省份等非市镇的代码
