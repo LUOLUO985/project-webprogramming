@@ -59,6 +59,8 @@ async function init() {
 
     //在加一个监听器 用于切换不同的什么生育率 之类的
     document.getElementById("indicator").addEventListener("change", changeIndicator);
+    //add a lisener for import exportpng
+    document.getElementById("export").addEventListener("click", exportPng);
 }
 function townStyle(feature) {
     const info = employment[feature.properties.kunta];
@@ -113,5 +115,18 @@ function updateMap() {
     layer.eachLayer(function (townLayer) {
         townLayer.setStyle(townStyle(townLayer.feature));
         showTownInfo(townLayer.feature, townLayer);
+    });
+}
+
+//take the map export into a png
+//把地图到处成为图片 借助智能体
+function exportPng() {
+    const mapElement = document.getElementById("map");
+
+    html2canvas(mapElement, { useCORS: true }).then(function (canvas) {
+        const link = document.createElement("a");
+        link.download = "finland-" + currentIndicator + ".png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
     });
 }
