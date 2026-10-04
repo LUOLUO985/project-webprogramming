@@ -32,8 +32,8 @@ const indicators = {
     },
 };
 const INDICATOR_LABELS = {
-    employment: "Employment Rate",
-    unemployment: "Unemployment Rate",
+    employment: "Employment Rate %",
+    unemployment: "Unemployment Rate %",
     dependency: "Dependency Ratio"
 };
 
@@ -71,8 +71,8 @@ function townStyle(feature) {
     };
 }
 
-function rateColor(rate) {
-    if (rate === null || rate === undefined) return "#e5e7eb";
+function rateColor(value) {
+    if (value === null || value === undefined) return "#e5e7eb";
     const conf = indicators[currentIndicator];
     if (value < conf.cuts[0]) return conf.colors[0];
     if (value < conf.cuts[1]) return conf.colors[1];
@@ -91,10 +91,12 @@ function showTownInfo(feature, townLayer) {
         return;
     }
 
-    townLayer.bindTooltip(`${info.name} ${INDICATOR_LABELS[currentIndicator]}: ${info[currentIndicator]} %`);
+    townLayer.bindTooltip(`${info.name} ${INDICATOR_LABELS[currentIndicator]}: ${info[currentIndicator]}`);
     townLayer.bindPopup(
         `<b>${info.name}</b><br>
-         ${INDICATOR_LABELS[currentIndicator]}: ${info[currentIndicator]} %`
+         Employment Rate: ${info.employment} %<br>
+         Unemployment Rate: ${info.unemployment} %<br>
+         Dependency Ratio: ${info.dependency}`
     );
 }
 //做到现在 已经可以看到颜色 包括 可以通过点击看到 就业率失业率这些信息
