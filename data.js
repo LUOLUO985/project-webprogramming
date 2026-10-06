@@ -16,6 +16,7 @@ async function fetchPxwebData(tablePath, query) {
     }),
   });
 
+
   //the security check for the response
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -120,4 +121,40 @@ async function loadEmploymentData(year) {
   }
 
   return table;
+}
+//就是给折线图 提供 一个市镇 全部年份的信息功能
+async function loadTownSeries(townCode) {
+    const areaCode = "KU" + townCode;
+
+    const query = [
+        { code: "alue_23_20250101", selection: { filter: "item", values: [areaCode] } },
+        { code: "timeperiod_y", selection: { filter: "all", values: ["*"] } },
+        { code: "contentscode", selection: { filter: "all", values: ["*"] } },
+    ];
+
+    const data = decodeJsonStat(await fetchPxwebData(EMPLOYMENT_TABLE_PATH, query));
+
+    // 年份都是四位数字，按字符串从小到大排，刚好就是从早到晚
+    const years = Object.keys(data.dimensions["timeperiod_y"].index).sort();
+
+    // pick把某一个指标的所有年份取成一个数组
+    //避免循环三遍的函数。太复杂 通过pick函数 直接做到这个对象里装了四样东西 年份+ 3个指标
+    function pick(contentCode) {
+        const result = [];
+        for (const year of years) {
+            result.push(data.get({
+                alue_23_20250101: areaCode,
+                timeperiod_y: year,
+                contentscode: contentCode,
+            }));
+        }
+        return result;
+    }
+
+    return {
+        years: years,
+        employment: pick("tyokay-tyollisyysaste"),
+        unemployment: pick("tyokay-tyottomyysaste"),
+        dependency: pick("taloudellinenhuoltosuhde"),
+    };
 }

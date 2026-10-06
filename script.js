@@ -15,7 +15,8 @@ let employment = {};   //帮我把写错的地方修改了 ，一开始 没有�
 let map;
 let layer;
 let currentIndicator = "employment"; 
-
+let selectedTownCode = null;
+let selectedTownSeries = null;
 const indicators = {
     // 就业率：越高越好  从低到高是 红 → 绿
     employment: {
@@ -55,7 +56,7 @@ async function init() {
     layer = L.geoJSON(geoJsonData, {
         style: townStyle,
         //add name
-        onEachFeature: showTownInfo,
+        onEachFeature: setupTown,
     }).addTo(map);
     map.fitBounds(layer.getBounds());
 
@@ -107,21 +108,32 @@ function rateColor(value) {
     return conf.colors[6]
 }
 
-function showTownInfo(feature, townLayer) {
-    const info = employment[feature.properties.kunta];
+// 每个市镇画好之后调用一次：绑提示框 + 绑点击
+function setupTown(feature, townLayer) {
+    const code = feature.properties.kunta;
 
-    if (!info) {
-        townLayer.bindTooltip(feature.properties.name);
-        return;
-    }
+    // 提示框的内容这里给的是一个"函数"，
+    // 意思是：每次鼠标移到这个市镇上，才去算要显示什么文字。
+    // 所以换了年份或指标之后，显示的就是最新的，不用重新绑定。
+    townLayer.bindTooltip(function () {
+        const info = employment[code];
+        if (!info) return feature.properties.name;
+        return info.name + "-" + INDICATOR_LABELS[currentIndicator] + ":" + info[currentIndicator];
+    });
 
-    townLayer.bindTooltip(`${info.name} ${INDICATOR_LABELS[currentIndicator]}: ${info[currentIndicator]}`);
-    townLayer.bindPopup(
-        `<b>${info.name}</b><br>
-         Employment Rate: ${info.employment} %<br>
-         Unemployment Rate: ${info.unemployment} %<br>
-         Dependency Ratio: ${info.dependency}`
-    );
+    townLayer.bindPopup(function () {
+        const info = employment[code];
+        if (!info) return feature.properties.name;
+        return "<b>" + info.name + "</b><br>" +
+               "Employment Rate: " + info.employment + " %<br>" +
+               "Unemployment Rate: " + info.unemployment + " %<br>" +
+               "Dependency Ratio: " + info.dependency;
+    });
+
+    // 点击这个市镇 画它的历年趋势图
+    townLayer.on("click", function () {
+        openTownChart(code);
+    });
 }
 //做到现在 已经可以看到颜色 包括 可以通过点击看到 就业率失业率这些信息
 
@@ -129,6 +141,7 @@ function showTownInfo(feature, townLayer) {
 function changeIndicator(event) {
     currentIndicator = event.target.value;
     updateMap();
+    updateChart()
 }
 
 // 让地图重新上色，并更新提示框
@@ -136,7 +149,7 @@ function changeIndicator(event) {
 function updateMap() {
     layer.eachLayer(function (townLayer) {
         townLayer.setStyle(townStyle(townLayer.feature));
-        showTownInfo(townLayer.feature, townLayer);
+        
     });
 }
 
@@ -152,3 +165,30 @@ function exportPng() {
         link.click();
     });
 }
+
+async function openTownChart(townCode){
+    selectedTownCode = townCode;
+    selectedTownSeries = await loadTownSeries(townCode);
+    const info = employment[townCode];
+    document.getElementById("panel-title").innerText=info.name;
+    updateChart();
+
+}
+//draw the chart that the city be selected
+function updateChart(){
+    if (selectedTownSeries===null) return;
+    const name = employment[selectedTownCode].name;
+
+    drawtrendchart(
+        name,
+        selectedTownSeries.years,
+        selectedTownSeries[currentIndicator]
+    );
+}
+
+//adjust the width when the windows size change
+window.addEventListener("resize", function () {
+    if (chart !== null) {
+        chart.resize();
+    }
+});

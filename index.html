@@ -17,9 +17,17 @@
         <select id= "year"></select>
         <button id="export">Export PNG</button>
     </div>
-    <div id="map"></div>
+    <div>
+        <div id="map"></div>
+        <div id ="panel">
+            <h2 id ="panel-title"></h2>
+            <div id="chart"></div>
+        </div>
+    </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/echarts@5.5.1/dist/echarts.min.js"></script>
+
     <script src="data.js"></script>
     <script src="script.js"></script>
 </body>
