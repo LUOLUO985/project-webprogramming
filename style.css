@@ -29,7 +29,8 @@ body{
     padding: 10px;
 }
 
-#indicator {
+#indicator ,
+#year{
     padding: 5px;
     font-size: 16px;
 }

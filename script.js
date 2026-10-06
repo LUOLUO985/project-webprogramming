@@ -5,7 +5,9 @@ const GEOJSON_URL =
   "&outputFormat=json&srsName=EPSG:4326";
 
 
-const EMPLOYMENT_YEAR = 2024;
+const FIRST_YEAR = 2000;
+const LAST_YEAR = 2024;
+let currentyear = LAST_YEAR;
 //data container for employment data, used to store the data
 let employment = {};   //帮我把写错的地方修改了 ，一开始 没有设置成全局变量 别的函数读不到
 //做到了 全局保护数据。把信息存起来了
@@ -46,7 +48,7 @@ async function init() {
     }).addTo(map);
     const results = await Promise.all([
         fetch(GEOJSON_URL).then((res) => res.json()),
-        loadEmploymentData(EMPLOYMENT_YEAR),
+        loadEmploymentData(currentyear),
     ]);
     const geoJsonData = results[0];
     employment = results[1];
@@ -61,6 +63,26 @@ async function init() {
     document.getElementById("indicator").addEventListener("change", changeIndicator);
     //add a lisener for import exportpng
     document.getElementById("export").addEventListener("click", exportPng);
+
+    //enter the year message into pull-down box
+    const yearSelect = document.getElementById("year");
+
+    for (let i = FIRST_YEAR; i<= LAST_YEAR; i++){
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = i;
+        yearSelect.append(option);
+    }
+
+    yearSelect.value = currentyear;
+    yearSelect.addEventListener("change", changeYear);
+}
+//等待网络请求 重新获取年份数据
+async function changeYear(event){
+    currentyear = Number(event.target.value);
+    employment = await loadEmploymentData(currentyear);
+    updateMap();
+
 }
 function townStyle(feature) {
     const info = employment[feature.properties.kunta];
