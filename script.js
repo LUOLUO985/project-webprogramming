@@ -104,7 +104,7 @@ async function changeYear(event){
 }
 function townStyle(feature) {
     const code = feature.properties.kunta;
-    let fill ="#404041"
+    let fill ="#878787"
     if (currentIndicator === "election"){
         const result = electionResults[code];
         if(result){
