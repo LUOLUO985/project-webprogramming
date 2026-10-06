@@ -181,7 +181,7 @@ async function loadElectionData() {
     //这一步被指导完成 有点困难。。。
     const parties =[];
     for (const partyCode of Object.keys(partyDim.index)){
-        if(party === "SSS") continue;
+        if(partyCode === "SSS") continue;
         parties.push(partyCode);
     }
     for (const areaCode of Object.keys(areaDim.index)){
@@ -213,9 +213,9 @@ async function loadElectionData() {
 function findWinner(list){
     let winner = null;
     for(const i of list){
-        if (ClipboardItem.share ===null) continue;
+        if (i.share ===null) continue;
         if (winner ===null || i.share > winner.share){
-            winner = ClipboardItem;
+            winner = i;
         }
 
     }

@@ -120,7 +120,7 @@ function townStyle(feature) {
     return {
         color: "#ffffff",
         weight: 1,
-        fillColor: rateColor(value),
+        fillColor: fill,
         fillOpacity: 0.85,
     };
 }
@@ -145,15 +145,16 @@ function setupTown(feature, townLayer) {
     // 意思是：每次鼠标移到这个市镇上，才去算要显示什么文字。
     // 所以换了年份或指标之后，显示的就是最新的，不用重新绑定。
     townLayer.bindTooltip(function () {
-        const info = employment[code];
-        if (!info) return feature.properties.name;
-        return info.name + "-" + INDICATOR_LABELS[currentIndicator] + ":" + info[currentIndicator];
-    });
         if (currentIndicator === "election") {
             const result = electionResults[code];
             if (!result) return feature.properties.name;
             return feature.properties.name + " - " + result.partyName + " " + result.share + " %";
         }
+
+        const info = employment[code];
+        if (!info) return feature.properties.name;
+        return info.name + "-" + INDICATOR_LABELS[currentIndicator] + ":" + info[currentIndicator];
+    });
     townLayer.bindPopup(function () {
         const info = employment[code];
         const result =electionResults[code];
@@ -219,6 +220,8 @@ async function openTownChart(townCode){
 //draw the chart that the city be selected
 function updateChart(){
     if (selectedTownSeries===null) return;
+    //切到选举后 再回到市镇 会一片空白 所以加了这个保护
+    if (currentIndicator === "election") return;
     const name = employment[selectedTownCode].name;
 
     drawtrendchart(
