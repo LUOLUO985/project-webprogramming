@@ -158,3 +158,66 @@ async function loadTownSeries(townCode) {
         dependency: pick("taloudellinenhuoltosuhde"),
     };
 }
+
+
+//municipal election
+const ELECTION_TABLE_PATH = "kvaa/152l.px";
+const ELECTION_YEAR ="2025";
+
+async function loadElectionData() {
+    const query = [
+        { code: "timeperiod_y", selection: { filter: "item", values: [ELECTION_YEAR] } },
+        { code: "puolue_35_20250101", selection: { filter: "all", values: ["*"] } },
+        { code: "sukupuoli_9_20180101", selection: { filter: "item", values: ["SSS"] } },
+        { code: "kunta_130_20250101", selection: { filter: "all", values: ["*"] } },
+        { code: "contentscode", selection: { filter: "item", values: ["kvaa-osuus_val"] } },
+    ];
+    const data = decodeJsonStat(await fetchPxwebData(ELECTION_TABLE_PATH, query));
+    const areaDim = data.dimensions["kunta_130_20250101"];
+    const partyDim = data.dimensions["puolue_35_20250101"];
+     
+    const table={};
+    //循环遍历每一个市镇 然后对比得票占比，把第一名的编码 正当名字 得票比例 存进table
+    //这一步被指导完成 有点困难。。。
+    const parties =[];
+    for (const partyCode of Object.keys(partyDim.index)){
+        if(party === "SSS") continue;
+        parties.push(partyCode);
+    }
+    for (const areaCode of Object.keys(areaDim.index)){
+        if (areaCode === "SSS")continue;
+        if (areaCode.startsWith("VP")) continue;
+        const list=[];
+        for (const partyCode of parties){
+            list.push({
+                partyCode: partyCode,
+                partyName: partyDim.labels[partyCode],
+                share: data.get({
+                    timeperiod_y: ELECTION_YEAR,
+                    puolue_35_20250101: partyCode,
+                    sukupuoli_9_20180101: "SSS",
+                    kunta_130_20250101: areaCode,
+                    contentscode: "kvaa-osuus_val",
+                }),
+            });
+
+        }
+        const winner = findWinner(list);
+        if (winner !== null){
+            table[areaCode]=winner;
+
+        }
+    }
+    return table;
+}    
+function findWinner(list){
+    let winner = null;
+    for(const i of list){
+        if (ClipboardItem.share ===null) continue;
+        if (winner ===null || i.share > winner.share){
+            winner = ClipboardItem;
+        }
+
+    }
+    return winner;
+}

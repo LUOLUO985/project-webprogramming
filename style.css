@@ -28,7 +28,7 @@ body{
     width: 380px;
     padding: 12px;
     background: #ffffff;
-    border-left: 1px;
+    border-left: 1px solid #f571ac;
     overflow-y: auto;
 
 }

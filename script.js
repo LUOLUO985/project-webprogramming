@@ -17,6 +17,7 @@ let layer;
 let currentIndicator = "employment"; 
 let selectedTownCode = null;
 let selectedTownSeries = null;
+let electionResults = {};
 const indicators = {
     // 就业率：越高越好  从低到高是 红 → 绿
     employment: {
@@ -40,6 +41,20 @@ const INDICATOR_LABELS = {
     dependency: "Dependency Ratio"
 };
 
+//查了一下芬兰媒体常用的政治色
+const PARTY_COLORS = {
+    "04": "#2e9e4f",   // KESK 中间党 —— 绿
+    "03": "#e11926",   // SDP 社会民主党 —— 红
+    "01": "#0f5c9e",   // KOK 民族联合党 —— 深蓝
+    "02": "#f5c542",   // PS 芬兰人党 —— 黄
+    "05": "#7ac143",   // VIHR 绿党 —— 浅绿
+    "06": "#e5007d",   // VAS 左翼联盟 —— 品红
+    "07": "#3fb0dd",   // RKP 瑞典族人民党 —— 天蓝
+    "08": "#6a3d9a",   // KD 基督教民主党 —— 紫
+    "09": "#f28e1c",   // LIIKE 运动党 —— 橙
+    "99": "#94a3b8",   // 其他
+};
+
 document.addEventListener("DOMContentLoaded", init);
 //draw the map
 async function init() {
@@ -50,9 +65,11 @@ async function init() {
     const results = await Promise.all([
         fetch(GEOJSON_URL).then((res) => res.json()),
         loadEmploymentData(currentyear),
+        loadElectionData(),
     ]);
     const geoJsonData = results[0];
     employment = results[1];
+    electionResults = results[2];
     layer = L.geoJSON(geoJsonData, {
         style: townStyle,
         //add name
@@ -86,8 +103,20 @@ async function changeYear(event){
 
 }
 function townStyle(feature) {
-    const info = employment[feature.properties.kunta];
-    const value = info ? info[currentIndicator] : null;
+    const code = feature.properties.kunta;
+    let fill ="#404041"
+    if (currentIndicator === "election"){
+        const result = electionResults[code];
+        if(result){
+            fill = PARTY_COLORS[result.partyCode] || "#94a3b8";
+
+        }
+    }else{
+        const info = employment[code];
+        if (info){
+            fill = rateColor(info[currentIndicator]);
+        }
+    }
     return {
         color: "#ffffff",
         weight: 1,
@@ -120,14 +149,27 @@ function setupTown(feature, townLayer) {
         if (!info) return feature.properties.name;
         return info.name + "-" + INDICATOR_LABELS[currentIndicator] + ":" + info[currentIndicator];
     });
-
+        if (currentIndicator === "election") {
+            const result = electionResults[code];
+            if (!result) return feature.properties.name;
+            return feature.properties.name + " - " + result.partyName + " " + result.share + " %";
+        }
     townLayer.bindPopup(function () {
         const info = employment[code];
-        if (!info) return feature.properties.name;
-        return "<b>" + info.name + "</b><br>" +
-               "Employment Rate: " + info.employment + " %<br>" +
-               "Unemployment Rate: " + info.unemployment + " %<br>" +
-               "Dependency Ratio: " + info.dependency;
+        const result =electionResults[code];
+        let text = "<b>" + feature.properties.name + "</b>";
+        //修改之后市镇有两个数据了 一次性看个全
+        if (info) {
+            text += "<br>Employment Rate: " + info.employment + " %";
+            text += "<br>Unemployment Rate: " + info.unemployment + " %";
+            text += "<br>Dependency Ratio: " + info.dependency;
+        }
+
+        if (result) {
+            text += "<br>Election " + ELECTION_YEAR + ": " + result.partyName + " " + result.share + " %";
+        }
+
+        return text;
     });
 
     // 点击这个市镇 画它的历年趋势图
