@@ -22,6 +22,7 @@ let populationdata = {};
 let itemA = "unemployment";
 let itemB = "over65";
 let operator = "+";
+let draggingLayer = null;
 const DATA_ITEMS = {
     employment: "Employment Rate %",
     unemployment: "Unemployment Rate %",
@@ -124,6 +125,25 @@ async function init() {
 
     yearSelect.value = currentyear;
     yearSelect.addEventListener("change", changeYear);
+    // add the drag and click card capacity
+    const cards = document.querySelectorAll(".card");
+    for (const card of cards){
+        setupCard(card);
+    }
+    updateActiveCard();
+//拖动图标的教程 学习了一下
+    const dropCard = document.querySelector(".content");
+    dropCard.addEventListener("dragover", function(event){
+        event.preventDefault();
+    });
+    dropCard.addEventListener("drop", function(event){
+        event.preventDefault();
+        if (draggingLayer !== null) {
+            switchLayer(draggingLayer);
+            draggingLayer = null;
+        }
+
+    });
     const selectA = document.getElementById("itemA");
     const selectB = document.getElementById("itemB");
     //数据计算。填入初始值 
@@ -151,7 +171,7 @@ function changeFormula(){
     itemB = document.getElementById("itemB").value;
     currentIndicator="custom";
     buildCustomLayer();
-    
+    updateActiveCard();
     updateMap();
 }
 function computeOne(code){
@@ -314,6 +334,7 @@ function setupTown(feature, townLayer) {
 // 用户改变了下拉框
 function changeIndicator(event) {
     currentIndicator = event.target.value;
+    updateActiveCard();
     updateMap();
     updateChart()
 }
@@ -382,5 +403,33 @@ function mergePopulation(){
         employment[code].population = populationdata[code].population;
         employment[code].over65 = populationdata[code].over65;
         employment[code].popChange = populationdata[code].popChange;
+    }
+}
+
+
+function setupCard(card){
+    card.addEventListener("dragstart", function(){
+        draggingLayer=card.dataset.layer;
+    });
+    //add a click for phone
+    card.addEventListener("click", function(){
+        switchLayer(card.dataset.layer);
+    });
+}
+function switchLayer(layer){
+    currentIndicator = layer;
+    document.getElementByld("indicator").value = layer;
+    updateActiveCard();
+    updateMap();
+}
+function updateActiveCard(){
+    const cards = document.querySelectorAll(".card");
+
+    for (const card of cards) {
+        if (card.dataset.layer === currentIndicator) {
+            card.classList.add("active");
+        } else {
+            card.classList.remove("active");
+        }
     }
 }

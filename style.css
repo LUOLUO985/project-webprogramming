@@ -58,6 +58,38 @@ body{
     padding: 5px;
     font-size: 16px;
 }
+/*拖拽卡片的设计是被指导了 设计不出来*/
+.shelf{
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap:8px;
+    padding: 8px 10px;
+    background: #a5c6ef;
+    border-bottom: 1px solid #5399f5;
+}
+.shelf-label{
+    font-size:13px;
+    color: #f571ac;
+}
+.card{
+    padding: 6px 12px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: grab;
+    user-select: none;
+}
+.card:hover{
+    border-color: #ffffff;
+}
+.card.active{
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+    cursor: default;
+}
 /* deal with the iphone fitness problem*/
 @media (max-width : 700px) {
     html, body{
@@ -80,5 +112,10 @@ body{
     #chart{
         height: 240px;
 
+    }
+    
+    .shelf{
+        flex-wrap:nowrap;
+        overflow-x: auto;
     }
 }
