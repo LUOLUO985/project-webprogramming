@@ -18,6 +18,7 @@ let currentIndicator = "employment";
 let selectedTownCode = null;
 let selectedTownSeries = null;
 let electionResults = {};
+let populationdata = {};
 const indicators = {
     // 就业率：越高越好  从低到高是 红 → 绿
     employment: {
@@ -33,25 +34,38 @@ const indicators = {
     dependency: {
         cuts: [115, 135, 150, 165, 180, 200],
         colors: ["#1a9850", "#91cf60", "#d9ef8b", "#ffffbf", "#fee08b", "#fc8d59", "#d73027"],
+
+    // 65 岁以上占比：越高代表老龄化压力越大 越高越红
+    over65: {
+        cuts: [23, 27, 30, 33, 37, 41],
+        colors: ["#1a9850", "#91cf60", "#d9ef8b", "#ffffbf", "#fee08b", "#fc8d59", "#d73027"],
+    },
+    // 人口变化：增长是好事 越高越绿
+    popChange: {
+        cuts: [-1.5, -1, -0.5, 0, 0.5, 1],
+        colors: ["#d73027", "#fc8d59", "#fee08b", "#ffffbf", "#d9ef8b", "#91cf60", "#1a9850"],
+    },
     },
 };
 const INDICATOR_LABELS = {
     employment: "Employment Rate %",
     unemployment: "Unemployment Rate %",
-    dependency: "Dependency Ratio"
+    dependency: "Dependency Ratio",
+    over65: "Age 65+",
+    popChange: "Population change%"
 };
 
 //查了一下芬兰媒体常用的政治色
 const PARTY_COLORS = {
-    "04": "#2e9e4f",   // KESK 中间党 —— 绿
-    "03": "#e11926",   // SDP 社会民主党 —— 红
-    "01": "#0f5c9e",   // KOK 民族联合党 —— 深蓝
-    "02": "#f5c542",   // PS 芬兰人党 —— 黄
-    "05": "#7ac143",   // VIHR 绿党 —— 浅绿
-    "06": "#e5007d",   // VAS 左翼联盟 —— 品红
-    "07": "#3fb0dd",   // RKP 瑞典族人民党 —— 天蓝
-    "08": "#6a3d9a",   // KD 基督教民主党 —— 紫
-    "09": "#f28e1c",   // LIIKE 运动党 —— 橙
+    "04": "#2e9e4f",   // KESK 中间党 
+    "03": "#e11926",   // SDP 社会民主党 
+    "01": "#0f5c9e",   // KOK 民族联合党 
+    "02": "#f5c542",   // PS 芬兰人党
+    "05": "#7ac143",   // VIHR 绿党 
+    "06": "#e5007d",   // VAS 左翼联盟 
+    "07": "#3fb0dd",   // RKP 瑞典族人民党 
+    "08": "#6a3d9a",   // KD 基督教民主党
+    "09": "#f28e1c",   // LIIKE 运动党 
     "99": "#94a3b8",   // 其他
 };
 
@@ -66,10 +80,14 @@ async function init() {
         fetch(GEOJSON_URL).then((res) => res.json()),
         loadEmploymentData(currentyear),
         loadElectionData(),
+        loadpopulationdata(),
     ]);
     const geoJsonData = results[0];
     employment = results[1];
     electionResults = results[2];
+    populationdata = results[3];
+    //合并至就业表，merge into employment form
+    mergePopulation()
     layer = L.geoJSON(geoJsonData, {
         style: townStyle,
         //add name
@@ -100,6 +118,7 @@ async function changeYear(event){
     currentyear = Number(event.target.value);
     employment = await loadEmploymentData(currentyear);
     updateMap();
+    mergePopulation();
 
 }
 function townStyle(feature) {
@@ -164,6 +183,9 @@ function setupTown(feature, townLayer) {
             text += "<br>Employment Rate: " + info.employment + " %";
             text += "<br>Unemployment Rate: " + info.unemployment + " %";
             text += "<br>Dependency Ratio: " + info.dependency;
+            //add the populaiton infromatin into employment popup windows
+            text += "<br>Population: " + info.populaiton;
+            text += "<br>Age 65+: " + info.over65 +"%";
         }
 
         if (result) {
@@ -237,3 +259,13 @@ window.addEventListener("resize", function () {
         chart.resize();
     }
 });
+
+function mergePopulation(){
+    for (const code of Object.keys(populationdata)){
+        if (!employment[code]) continue;
+
+        employment[code].population = populationdata[code].population;
+        employment[code].populaiton = populationdata[code].over65;
+        employment[code].popChange = populationdata[code].popChange;
+    }
+}

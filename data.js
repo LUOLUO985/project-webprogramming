@@ -221,3 +221,48 @@ function findWinner(list){
     }
     return winner;
 }
+
+//catch the population data
+//catch the people agr struture population change
+const POPULATION_TABLE_PATH = "vaerak//11ra.px";
+const POPULATION_YEAR ="2025";
+
+async function loadpopulationdata() {
+    const query = [
+        { code: "alue_23_20260101", selection: { filter: "all", values: ["*"] } },
+        { code: "contentscode", selection: { filter: "item", values: ["vaerak-vaesto", "vaesto_yli64_p", "kokmuutos_p"] } },
+        { code: "timeperiod_y", selection: { filter: "item", values: [POPULATION_YEAR] } },
+    ];
+
+    const data = decodeJsonStat(await fetchPxwebData(POPULATION_TABLE_PATH, query));
+
+    const areaDim = data.dimensions["alue_23_20260101"];
+    const table = {};
+    for (const areaCode of Objects.keys(areaDim.index)){
+        //only keep the data in town
+        if (!areaCode.startsWith("KU")) continue;
+        const id = areaCode.replace("KU", "")
+        table[id] = {
+            population: data.get({
+                alue_23_20260101: areaCode,
+                contentscode: "vaerak-vaesto",
+                timeperiod_y: POPULATION_YEAR,
+            }),
+            over65: data.get({
+                alue_23_20260101: areaCode,
+                contentscode: "vaesto_yli64_p",
+                timeperiod_y: POPULATION_YEAR,
+            }),
+            popChange: data.get({
+                alue_23_20260101: areaCode,
+                contentscode: "kokmuutos_p",
+                timeperiod_y: POPULATION_YEAR,
+            }),
+        };
+    }
+
+    return table;
+    
+
+    
+}
