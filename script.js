@@ -19,6 +19,17 @@ let selectedTownCode = null;
 let selectedTownSeries = null;
 let electionResults = {};
 let populationdata = {};
+let itemA = "unemployment";
+let itemB = "over65";
+let operator = "+";
+const DATA_ITEMS = {
+    employment: "Employment Rate %",
+    unemployment: "Unemployment Rate %",
+    dependency: "Dependency Ratio",
+    population: "Population",
+    over65: "Age 65+ %",
+    popChange: "Population Change %",
+};
 const indicators = {
     // 就业率：越高越好  从低到高是 红 → 绿
     employment: {
@@ -87,7 +98,8 @@ async function init() {
     electionResults = results[2];
     populationdata = results[3];
     //合并至就业表，merge into employment form
-    mergePopulation()
+    mergePopulation();
+    buildCustomLayer();
     layer = L.geoJSON(geoJsonData, {
         style: townStyle,
         //add name
@@ -112,13 +124,110 @@ async function init() {
 
     yearSelect.value = currentyear;
     yearSelect.addEventListener("change", changeYear);
+    const selectA = document.getElementById("itemA");
+    const selectB = document.getElementById("itemB");
+    //数据计算。填入初始值 
+    for (const key of Object.keys(DATA_ITEMS)) {
+        const optionA = document.createElement("option");
+        optionA.value = key;
+        optionA.textContent = DATA_ITEMS[key];
+        selectA.appendChild(optionA);
+
+        const optionB = document.createElement("option");
+        optionB.value = key;
+        optionB.textContent = DATA_ITEMS[key];
+        selectB.appendChild(optionB);
+    }
+
+    selectA.value = itemA;
+    selectB.value = itemB;
+    selectA.addEventListener("change", changeFormula);
+    document.getElementById("operator").addEventListener("change", changeFormula);
+    selectB.addEventListener("change", changeFormula);
 }
+function changeFormula(){
+    itemA = document.getElementById("itemA").value;
+    operator = document.getElementById("operator").value;
+    itemB = document.getElementById("itemB").value;
+    currentIndicator="custom";
+    buildCustomLayer();
+    
+    updateMap();
+}
+function computeOne(code){
+    const info = employment[code];
+
+    const a = info[itemA];
+    const b = info[itemB];
+
+    if (a === null || a === undefined) return null;   // 这个市镇缺 A 的数据
+    if (b === null || b === undefined) return null;   // 缺 B 的数据
+    if (operator === "/" && b === 0) return null;     // 不能除以 0
+
+    if (operator === "+") return a + b;
+    if (operator === "-") return a - b;
+    if (operator === "*") return a * b;
+    return a / b; 
+}
+// 给每个市镇算一个"自定义数值"，并配好颜色
+function buildCustomLayer() {
+
+    // 第一步：算数字，一个市镇一个，同时收集起来 
+    const values = [];
+
+    for (const code of Object.keys(employment)) {
+        const value = computeOne(code);
+
+        employment[code].custom = value;   
+        // 存进表里，地图就能取到
+
+        if (value !== null) {
+            values.push(value);            
+            // 顺便收进 values 这个数组
+        }
+    }
+
+    // 第二步：找出这批数字的最小值和最大值
+    let min = values[0];
+    let max = values[0];
+
+    for (const value of values) {
+        if (value < min) min = value;
+        if (value > max) max = value;
+    }
+
+    //第三步：从最小到最大平均切 6 刀，得到 7 档
+    const step = (max - min) / 7;          
+    // 每一档的宽度
+    const cuts = [];
+
+    for (let i = 1; i <= 6; i++) {
+        cuts.push(min + step * i);         
+        
+    }
+
+    //第四步：把分档线登记成一个新图层
+    indicators.custom = {
+        cuts: cuts,
+        colors: ["#eff3ff", "#c6dbef", "#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#08519c"],
+    };
+
+    //  第五步：更新提示框和下拉框里显示的文字 
+    const formula = DATA_ITEMS[itemA] + " " + operator + " " + DATA_ITEMS[itemB];
+
+    INDICATOR_LABELS.custom = formula;
+
+    document.querySelector('#indicator option[value="custom"]').textContent =
+        "Custom: " + formula;
+}
+
 //等待网络请求 重新获取年份数据
 async function changeYear(event){
     currentyear = Number(event.target.value);
     employment = await loadEmploymentData(currentyear);
     
     mergePopulation();
+    buildCustomLayer();
     updateMap();
 }
 function townStyle(feature) {
