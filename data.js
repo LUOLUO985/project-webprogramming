@@ -224,7 +224,7 @@ function findWinner(list){
 
 //catch the population data
 //catch the people agr struture population change
-const POPULATION_TABLE_PATH = "vaerak//11ra.px";
+const POPULATION_TABLE_PATH = "vaerak/11ra.px";
 const POPULATION_YEAR ="2025";
 
 async function loadpopulationdata() {
@@ -238,7 +238,7 @@ async function loadpopulationdata() {
 
     const areaDim = data.dimensions["alue_23_20260101"];
     const table = {};
-    for (const areaCode of Objects.keys(areaDim.index)){
+    for (const areaCode of Object.keys(areaDim.index)){
         //only keep the data in town
         if (!areaCode.startsWith("KU")) continue;
         const id = areaCode.replace("KU", "")

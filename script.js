@@ -34,7 +34,7 @@ const indicators = {
     dependency: {
         cuts: [115, 135, 150, 165, 180, 200],
         colors: ["#1a9850", "#91cf60", "#d9ef8b", "#ffffbf", "#fee08b", "#fc8d59", "#d73027"],
-
+    },
     // 65 岁以上占比：越高代表老龄化压力越大 越高越红
     over65: {
         cuts: [23, 27, 30, 33, 37, 41],
@@ -45,7 +45,7 @@ const indicators = {
         cuts: [-1.5, -1, -0.5, 0, 0.5, 1],
         colors: ["#d73027", "#fc8d59", "#fee08b", "#ffffbf", "#d9ef8b", "#91cf60", "#1a9850"],
     },
-    },
+    
 };
 const INDICATOR_LABELS = {
     employment: "Employment Rate %",
@@ -117,9 +117,9 @@ async function init() {
 async function changeYear(event){
     currentyear = Number(event.target.value);
     employment = await loadEmploymentData(currentyear);
-    updateMap();
+    
     mergePopulation();
-
+    updateMap();
 }
 function townStyle(feature) {
     const code = feature.properties.kunta;
@@ -184,7 +184,7 @@ function setupTown(feature, townLayer) {
             text += "<br>Unemployment Rate: " + info.unemployment + " %";
             text += "<br>Dependency Ratio: " + info.dependency;
             //add the populaiton infromatin into employment popup windows
-            text += "<br>Population: " + info.populaiton;
+            text += "<br>Population: " + info.population;
             text += "<br>Age 65+: " + info.over65 +"%";
         }
 
@@ -238,6 +238,11 @@ async function openTownChart(townCode){
     document.getElementById("panel-title").innerText=info.name;
     updateChart();
 
+    //添加一个手机的功能 点了市镇之后直接滑动到面板
+    if(window.innerWidth <= 700){
+        document.getElementById("panel").scrollIntoView({behavior:"smooth"});
+    }
+
 }
 //draw the chart that the city be selected
 function updateChart(){
@@ -255,6 +260,7 @@ function updateChart(){
 
 //adjust the width when the windows size change
 window.addEventListener("resize", function () {
+    map.invalidateSize();  //recaculate the size 
     if (chart !== null) {
         chart.resize();
     }
@@ -265,7 +271,7 @@ function mergePopulation(){
         if (!employment[code]) continue;
 
         employment[code].population = populationdata[code].population;
-        employment[code].populaiton = populationdata[code].over65;
+        employment[code].over65 = populationdata[code].over65;
         employment[code].popChange = populationdata[code].popChange;
     }
 }

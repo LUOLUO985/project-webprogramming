@@ -55,3 +55,27 @@ body{
     padding: 5px;
     font-size: 16px;
 }
+/* deal with the iphone fitness problem*/
+@media (max-width : 700px) {
+    html, body{
+        height: auto;
+
+    }
+    .content{
+        flex-direction: column;
+    }
+    #map{
+        flex:none;
+        height:60vh;
+
+    }
+    #panel{
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid #333;
+    }
+    #chart{
+        height: 240px;
+        
+    }
+}
