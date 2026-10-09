@@ -418,7 +418,7 @@ function setupCard(card){
 }
 function switchLayer(layer){
     currentIndicator = layer;
-    document.getElementByld("indicator").value = layer;
+    document.getElementById("indicator").value = layer;
     updateActiveCard();
     updateMap();
 }
